@@ -5,4 +5,4 @@ and then:
 
 npm run dev
 
-which will return localhost/PortNumber where the code / project can be found in browser 
+which will return localhost:PortNumber where the code / project can be found in browser 
