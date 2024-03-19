@@ -1,6 +1,6 @@
 import './style.css';
 import * as THREE from 'three';
-// import {OrbitControls} from 'three/examples/jam/controls/OrbitControls';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 /* need three items to 3d render 
 1. scene
 2. camera
@@ -33,7 +33,7 @@ renderer.render(scene, camera);
 2. give it a material, most require a light source but "basic" ones do not require light
 3. create a mesh by combining the geometry with the material */
 const geometry = new THREE.TorusGeometry(10, 3, 16, 100);
-const material = new THREE.MeshBasicMaterial({color: 9001631, wireframe: true});
+const material = new THREE.MeshStandardMaterial({color: 9001631}); //removed wireframe:true; here to show how light reflects off standard material objects
 const torus = new THREE.Mesh(geometry, material);
 
 /* have to add our object to display it */
@@ -43,8 +43,58 @@ scene.add(torus);
 const pointLight = new THREE.PointLight(0xffffff);
 pointLight.position.set(5, 5, 5);
 
-//const ambientLight = new THREE.AmbientLight(0xffffff);
-scene.add(pointLight); //removed ambientLight because of whitewash on shape
+const ambientLight = new THREE.AmbientLight(0xffffff);
+
+scene.add(pointLight, ambientLight); //removed ambientLight because of whitewash on shape
+
+//helpers
+// const lightHelper = new THREE.PointLightHelper(pointLight)
+
+// const gridHelper = new THREE.GridHelper(200, 50);
+// scene.add(lightHelper, gridHelper) 
+
+//init orbit controls which allow movement with the cursor
+//this wlil listen to dom events on the mouse and update the camera position
+const controls = new OrbitControls(camera, renderer.domElement);
+
+function addStar(){
+  //creating new "star" object, size is .25 and ....
+  const geometry = new THREE.SphereGeometry(0.25, 24, 24);
+  // giving star objects a material, same as torus material above
+  const material = new THREE.MeshStandardMaterial({color: 0xffffff})
+  // actually creates the star object given geometry and material
+  const star = new THREE.Mesh( geometry, material);
+  // initializing array of blank x,y,z values to be given random positions
+  const [x, y, z] = Array(3).fill().map(() => THREE.MathUtils.randFloatSpread(100));
+  // setting star position to defaults
+  star.position.set(x, y, z);
+  // adding single star to the scene
+  scene.add(star)
+}
+// initializing array of 200 star objects that will be randomly placed thru loop
+Array(200).fill().forEach(addStar)
+// created spaceTexture that holds the background image for project/site
+// const spaceTexture = new THREE.TextureLoader().load('/images/spacebg1.jpg');
+// setting background of page to space texture initialized above
+// scene.background = spaceTexture;
+
+function moveCamera(){
+  // finds where the user is scrolling to, 
+  //get boundngClientRect will give us the dimiensions  of the viiewport,
+  // top property will show how far we are from the top of the apge
+  const t = document.body.getBoundingClientRect().top;
+
+  // here maybe add rotation for other objects so they move on scroll
+
+
+  //
+  camera.position.z = t * -0.01;
+  camera.position.x = t * -0.0002;
+  camera.position.y = t * -0.0002;
+
+}
+
+document.body.onscroll = moveCamera
 
 function animate(){
   requestAnimationFrame(animate);
@@ -53,6 +103,8 @@ function animate(){
   torus.rotation.y += 0.005;
   torus.rotation.z += 0.01;
   
+  //controls.update();
+
   renderer.render(scene, camera);
 }
 
