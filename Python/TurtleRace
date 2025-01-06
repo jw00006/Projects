@@ -1,0 +1,80 @@
+import turtle
+import random
+
+WIDTH, HEIGHT = 900, 1000
+COLORS = ['red', 'green', 'blue', 'orange', 'yellow', 'black', 'purple', 'pink', 'brown', 'cyan']
+
+def getNumOfRacers():
+	racers = 0
+	while True:
+		# Show a dialog box with a text input:
+         answer = turtle.textinput("Number of Racers", "Enter a number between 2 and 10 : ")
+        # If user clicked 'Cancel', turtle.textinput returns None
+         if answer is None:
+            return None
+        
+        # Validate the answer
+         if answer.isdigit():
+            racers = int(answer)
+            if 2 <= racers <= 10:
+                return racers
+            else:
+                turtle.textinput("Invalid range", f"You entered {racers}. Must be 2–10.\nPress OK to retry.")
+         else:
+            turtle.textinput("Invalid input", f"You entered '{answer}' which is not an integer.\nPress OK to retry.")
+
+def race(colors):
+	turtles = createTurtles(colors)
+
+	while True:
+		for racer in turtles:
+			distance = random.randrange(1, 20)
+			racer.forward(distance)
+
+			x, y = racer.pos()
+			if y >= HEIGHT // 2 - 10:
+				return colors[turtles.index(racer)]
+
+def createTurtles(colors):
+	turtles = []
+	spacingx = WIDTH // (len(colors) + 1)
+	for i, color in enumerate(colors):
+		racer = turtle.Turtle()
+		racer.color(color)
+		racer.shape('turtle')
+		racer.left(90)
+		racer.penup()
+		racer.setpos(-WIDTH // 2 + (i + 1) * spacingx, -HEIGHT // 2 + 20)
+		racer.pendown()
+		turtles.append(racer)
+	return turtles
+
+def initTurtle():
+	global screen
+	screen = turtle.Screen()
+	screen.clear()
+	screen.setup(WIDTH, HEIGHT)
+	screen.title('Turtle Racing!')
+
+def main():
+	while True:
+		racers = getNumOfRacers()
+		if racers is None:
+			print("Exiting...")
+			break
+		initTurtle()
+
+		random.shuffle(COLORS)
+		colors = COLORS[:racers]
+
+		winner_color = race(colors)
+
+		result = turtle.textinput("Race Over", f"The winner is the turtle with color: {winner_color}\n\n"
+							"Would you like to race again?\nEnter 'Y' to race again")
+		if not result or result.lower() != 'y':
+            # If user clicks cancel (None) or does not enter 'y', exit
+			print("Exiting races.")
+			break
+
+if __name__ == "__main__":
+    main()
