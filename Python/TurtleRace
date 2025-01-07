@@ -2,26 +2,33 @@ import turtle
 import random
 
 WIDTH, HEIGHT = 900, 1000
-COLORS = ['red', 'green', 'blue', 'orange', 'yellow', 'black', 'purple', 'pink', 'brown', 'cyan']
+COLORS = ['red', 'green', 'blue', 'orange', 'yellow', 'black', 'purple', 'pink', 'brown', 'cyan', 'white']
+
+# Global references for click handler
+screen = None
+start_button = None
+racers_count = None  # The user’s chosen number of racers
+selected_colors = []
+race_in_progress = False  # Used to ensure the race doesn't start multiple times
+current_bg = "gray"
 
 def getNumOfRacers():
-	racers = 0
 	while True:
 		# Show a dialog box with a text input:
-         answer = turtle.textinput("Number of Racers", "Enter a number between 2 and 10 : ")
-        # If user clicked 'Cancel', turtle.textinput returns None
-         if answer is None:
-            return None
-        
-        # Validate the answer
-         if answer.isdigit():
-            racers = int(answer)
-            if 2 <= racers <= 10:
-                return racers
-            else:
-                turtle.textinput("Invalid range", f"You entered {racers}. Must be 2–10.\nPress OK to retry.")
-         else:
-            turtle.textinput("Invalid input", f"You entered '{answer}' which is not an integer.\nPress OK to retry.")
+		answer = turtle.textinput("Number of Racers", "Enter a number between 2 and 10 : ")
+		# If user clicks 'Cancel', turtle.textinput returns None
+		if answer is None:
+			return None
+
+		# Validate the answer
+		if answer.isdigit():
+			racers = int(answer)
+			if 2 <= racers <= 10:
+				return racers
+			else:
+				turtle.textinput("Invalid range", f"You entered {racers}. Must be 2–10.\nPress OK to retry.")
+		else:
+			turtle.textinput("Invalid input", f"You entered '{answer}' which is not an integer.\nPress OK to retry.")
 
 def race(colors):
 	turtles = createTurtles(colors)
@@ -32,6 +39,7 @@ def race(colors):
 			racer.forward(distance)
 
 			x, y = racer.pos()
+			# If turtle reaches the finish line ... 
 			if y >= HEIGHT // 2 - 10:
 				return colors[turtles.index(racer)]
 
@@ -40,10 +48,11 @@ def createTurtles(colors):
 	spacingx = WIDTH // (len(colors) + 1)
 	for i, color in enumerate(colors):
 		racer = turtle.Turtle()
-		racer.color(color)
+		racer.left(90) # Point the turtle upwards
 		racer.shape('turtle')
-		racer.left(90)
+		racer.color(color)
 		racer.penup()
+		# Aligning turtles horizontally across the screen
 		racer.setpos(-WIDTH // 2 + (i + 1) * spacingx, -HEIGHT // 2 + 20)
 		racer.pendown()
 		turtles.append(racer)
@@ -55,26 +64,93 @@ def initTurtle():
 	screen.clear()
 	screen.setup(WIDTH, HEIGHT)
 	screen.title('Turtle Racing!')
+	screen.bgcolor(current_bg)
+
+def createStartButton():
+    global start_button, start_text
+
+    # Starting rectangle
+    start_button = turtle.Turtle()
+    start_button.speed(0) # Instantly draws rectangle
+    start_button.penup()
+    start_button.goto(0, 0)
+    start_button.shape("square")
+    start_button.shapesize(stretch_wid=2, stretch_len=5) # Makes rectangle larger
+    start_button.color("white", "green") # White border with green fill
+    start_button.showturtle()
+
+    # "Start" text
+    start_text = turtle.Turtle()
+    start_text.speed(0)
+    start_text.penup()
+    start_text.goto(0, -10)  # To display on top of rectangle
+    start_text.hideturtle()
+    start_text.color("white")
+    start_text.write(
+        "START",
+        align="center",
+        font=("Arial", 16, "bold")
+    )
+
+def on_screen_click(x, y):
+	global race_in_progress
+
+	if race_in_progress:
+		return  # Ignores clicks if race is already running
+
+	# Checks if the click is in range of the button
+	# Measures distance from the button's center
+	if start_button.distance(x, y) < 50:  # 50 is an approximate radius for the button
+		race_in_progress = True  # Saves that the race is running, so no extra clicks
+		 
+		start_button.hideturtle() # Removes rectangle shape 
+		start_button.clear() # Removes text
+
+		start_text.clear() # Removes text
+		start_text.hideturtle() # Removes rectangle shape
+
+		# Runs the race and save winning color
+		winner = race(selected_colors)
+
+		# Displays the winner in a pop-up
+		again = turtle.textinput("Race Over", f"The winner is {winner}!\n\nEnter 'Y' to race again, or anything else to quit.")
+
+		if again and again.lower() == "y":
+			# Starts a new race
+			main()  # or you could just do everything again
+		else:
+			# User doesn't want another race
+			turtle.bye()  # closes the turtle screen
+	else:
+		# User clicked somewhere else, ignore
+		pass
 
 def main():
-	while True:
-		racers = getNumOfRacers()
-		if racers is None:
-			print("Exiting...")
-			break
-		initTurtle()
+	global racers_count, selected_colors, race_in_progress
+	race_in_progress = False  # Resets the race flag each time
 
-		random.shuffle(COLORS)
-		colors = COLORS[:racers]
+	# Creating the turtle window first so that gray is default background color compared to white
+	initTurtle()
 
-		winner_color = race(colors)
+	# Gets number of racers / turtles
+	racers_count = getNumOfRacers()
+	if racers_count is None:
+		print("User cancelled. Exiting...")
+		return
 
-		result = turtle.textinput("Race Over", f"The winner is the turtle with color: {winner_color}\n\n"
-							"Would you like to race again?\nEnter 'Y' to race again")
-		if not result or result.lower() != 'y':
-            # If user clicks cancel (None) or does not enter 'y', exit
-			print("Exiting races.")
-			break
+	# Shuffles colors for turtles and sets based on racers_count
+	random.shuffle(COLORS)
+	selected_colors = COLORS[:racers_count]
+
+	# Creating start button
+	createStartButton()
+
+	# Waits for user to click start button
+	screen.onclick(on_screen_click)
+
+	# Keeps window open in case of another race 
+	turtle.done()
+
 
 if __name__ == "__main__":
     main()
